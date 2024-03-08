@@ -2,6 +2,7 @@ from openpyxl.drawing.image import Image as XLImage
 from openpyxl.utils import get_column_letter
 from openpyxl import load_workbook
 
+
 def fill_missing_images(text_excel, images_excel, output_excel):
     # Load the text Excel file
     wb_text = load_workbook(text_excel)
