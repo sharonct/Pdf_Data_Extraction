@@ -29,22 +29,18 @@ def fill_missing_images(text_excel, images_excel, output_excel):
     for row in ws_text.iter_rows(min_row=2, max_col=6, values_only=True):
         trademark_number = row[0]
         image_path = row[5]
-        if image_path is None:
-            # If image path is None, skip
-            continue
 
-        # If image is missing, try to fill it from the image_paths dictionary
-        if trademark_number in image_paths:
-            new_image_path = image_paths[trademark_number]
-            if new_image_path is not None:
-                # Add the image to the output worksheet
-                img_xl = XLImage(new_image_path)
-                img_xl.anchor = ws_output.cell(row=row_idx, column=6).coordinate
-                ws_output.add_image(img_xl)
+        if image_path is None:
+            # If image is missing, try to fill it from the image_paths dictionary
+            if trademark_number in image_paths:
+                new_image_path = image_paths[trademark_number]
+                if new_image_path is not None:
+                    # Add the image to the output worksheet
+                    img_xl = XLImage(new_image_path)
+                    img_xl.anchor = ws_output.cell(row=row_idx, column=6).coordinate
+                    ws_output.add_image(img_xl)
 
         row_idx += 1
 
     # Save the output Excel file
     wb_output.save(output_excel)
-
-
