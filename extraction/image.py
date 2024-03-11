@@ -27,7 +27,7 @@ def extract_trademarks_and_logos(pdf_file, output_excel):
     ws.append(['TradeMarkNo.', 'Images','Image Path'])
 
     doc = fitz.open(pdf_file)
-    clear_directory('Data/images')
+    clear_directory('output/images')
 
     row = 2  # Start from the second row to leave space for the header
 
@@ -46,7 +46,7 @@ def extract_trademarks_and_logos(pdf_file, output_excel):
             # If the last word is not in capital letters and we have images available
             if not last_word_caps and image_index < len(images):
                 try:
-                    image_path = f"Data/images/{trademark_number}.png"
+                    image_path = f"output/images/{trademark_number}.png"
                     pix = fitz.Pixmap(doc, images[image_index][0])
                     pil_image = PILImage.frombytes("RGB", [pix.width, pix.height], pix.samples)
                     pil_image = pil_image.resize((50, 50))  # Resize the image to 50x50
