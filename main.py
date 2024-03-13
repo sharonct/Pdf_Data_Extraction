@@ -12,6 +12,4 @@ if __name__ == "__main__":
     
     df_image = extract_trademarks_and_logos(file_path )
 
-    df_image.to_excel("output/images.xlsx", index=False)
-
     fill_missing_images(df_text, df_image,'output/final.xlsx')

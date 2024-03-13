@@ -67,8 +67,7 @@ def extract_data(file_path, start_page, end_page):
                 lines = [line.strip() for line in page_content.split('\n')]
 
                 # Filter out lines that contain the page header text or page numbers
-                lines = [line for line in lines if not any(header_text in line for header_text in ['(19) KE - Industrial Property Journal -', '_________', 'Page']) and not line.isdigit()]
-
+                lines = [line for line in lines if not any(header_text in line for header_text in ['(19) KE - Industrial Property Journal -', '_________', 'Page']) and not line.isdigit() and not '(19) KE - Industrial Pr operty Journal - No.' in line]
                 # Iterate over lines to identify blocks
                 for line in lines:
                     if '210' in line:
