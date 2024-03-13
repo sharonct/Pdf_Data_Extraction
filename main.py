@@ -11,8 +11,9 @@ if __name__ == "__main__":
 
     data = extract_data(file_path, start_page, end_page)
 
-    df = pd.DataFrame(data)
-    df.to_excel("output/text.xlsx", index=False)
+    df_text = pd.DataFrame(data)
+    
+    df_text.to_excel("output/text.xlsx", index=False)
 
     extract_trademarks_and_logos(file_path, "output/images.xlsx")
     

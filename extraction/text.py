@@ -1,14 +1,11 @@
-import os
-import re
 import PyPDF2
-import pandas as pd
-
+import re
 
 def extract_info(block):
-    trademark_number_match = re.search(r'\(210\) : (\d+)', block)
+    trademark_number_match = re.search(r'210\)\s*:?\s*(\d+)', block)
     filing_date_match = re.search(r'\(220\) : (\d{2}/\d{2}/\d{4})', block)
     class_registration_match = re.search(r'\(511\) : (.*?)(?=\(\d{3}\)|\(220\)|\(210\)|$)', block, re.DOTALL)
-    proprietor_match = re.search(r'\(730\) : (.*?)(?=\(\d{3}\)|\(740\)|$)', block, re.DOTALL)
+    proprietor_match = re.search(r'\(730\)\s*:\s*(.*?)(?=\(740\)|$)', block, re.DOTALL)
     representative_match = re.search(r'\(740\) : (.*?)(?=\(\d{3}\)|$)', block, re.DOTALL)
 
     trademark_number = trademark_number_match.group(1) if trademark_number_match else ''
@@ -60,6 +57,7 @@ def extract_data(file_path, start_page, end_page):
             num_pages = len(pdf_reader.pages)
 
             # Iterate over pages within the specified range
+            block = ''  # Initialize block
             for page_idx in range(start_page - 1, min(end_page, num_pages)):
                 page = pdf_reader.pages[page_idx]
                 page_content = page.extract_text()
@@ -67,12 +65,12 @@ def extract_data(file_path, start_page, end_page):
                 # Split page content by lines and remove newline characters
                 lines = [line.strip() for line in page_content.split('\n')]
 
-                # Initialize block
-                block = ''
+                # Filter out lines that contain the page header text or page numbers
+                lines = [line for line in lines if not any(header_text in line for header_text in ['(19) KE - Industrial Property Journal -', '_________', 'Page']) and not line.isdigit()]
 
                 # Iterate over lines to identify blocks
                 for line in lines:
-                    if '(210) :' in line:
+                    if '210' in line:
                         # If a new block starts, extract info from the previous block
                         if block:
                             info = extract_info(block)
@@ -89,16 +87,16 @@ def extract_data(file_path, start_page, end_page):
                         # Append line to the current block
                         block += ' ' + line
 
-                # Extract info from the last block on the page
-                if block:
-                    info = extract_info(block)
-                    if info:
-                        data["Trademark Number (210)"].append(info[0])
-                        data["Application Filing Date (220)"].append(info[1])
-                        data["Class of registration (511)"].append(info[2])
-                        data["Proprietor/Owner (730)"].append(info[3])
-                        data["Representative/Applicant (740)"].append(info[4])
-                        data["Image/Mark"].append(info[5])
+            # Extract info from the last block on the last page
+            if block:
+                info = extract_info(block)
+                if info:
+                    data["Trademark Number (210)"].append(info[0])
+                    data["Application Filing Date (220)"].append(info[1])
+                    data["Class of registration (511)"].append(info[2])
+                    data["Proprietor/Owner (730)"].append(info[3])
+                    data["Representative/Applicant (740)"].append(info[4])
+                    data["Image/Mark"].append(info[5])
 
     except Exception as e:
         print(f"Error occurred: {e}")
@@ -107,3 +105,4 @@ def extract_data(file_path, start_page, end_page):
         print("No data found within the specified page range.")
 
     return data
+
