@@ -1,5 +1,6 @@
 import PyPDF2
 import re
+import pandas as pd
 
 def extract_info(block):
     trademark_number_match = re.search(r'210\)\s*:?\s*(\d+)', block)
@@ -104,5 +105,7 @@ def extract_data(file_path, start_page, end_page):
     if not data:
         print("No data found within the specified page range.")
 
-    return data
+    df = pd.DataFrame(data)
+
+    return df
 

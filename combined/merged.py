@@ -1,47 +1,49 @@
+from PIL import Image as PILImage
+from openpyxl import Workbook
 from openpyxl.drawing.image import Image as XLImage
-from openpyxl.utils import get_column_letter
-from openpyxl import load_workbook
+from io import BytesIO
+import pandas as pd
 
-
-def fill_missing_images(text_excel, images_excel, output_excel):
-    # Load the text Excel file
-    wb_text = load_workbook(text_excel)
-    ws_text = wb_text.active
-
-    # Load the images Excel file
-    wb_images = load_workbook(images_excel)
-    ws_images = wb_images.active
-
+def fill_missing_images(text_df, images_df, output_excel):
     # Create a new workbook for the output
-    wb_output = load_workbook(text_excel)
+    wb_output = Workbook()
     ws_output = wb_output.active
 
-    # Dictionary to store trademark numbers and corresponding image paths
-    image_paths = {}
+    # Add headers from the text dataframe
+    for col_idx, col_name in enumerate(text_df.columns, start=1):
+        ws_output.cell(row=1, column=col_idx, value=col_name)
 
-    # Extract trademark numbers and image paths from the images Excel file
-    for row in ws_images.iter_rows(min_row=2, max_col=3, values_only=True):
-        trademark_number = row[0]
-        image_path = row[2]
-        image_paths[trademark_number] = image_path
+    # Dictionary to store trademark numbers and corresponding images
+    image_data = {}
 
-    # Check for null image entries in the text Excel file and fill them with images from the images Excel file
-    row_idx = 2  # Start from the second row
-    for row in ws_text.iter_rows(min_row=2, max_col=6, values_only=True):
-        trademark_number = row[0]
-        image_path = row[5]
+    # Extract trademark numbers and images from the images dataframe
+    for index, row in images_df.iterrows():
+        trademark_number = row['TrademarkNo']
+        image_bytes = row['ImageData']
+        if trademark_number and image_bytes:
+            image_data[trademark_number] = image_bytes
 
-        if image_path is None:
-            # If image is missing, try to fill it from the image_paths dictionary
-            if trademark_number in image_paths:
-                new_image_path = image_paths[trademark_number]
-                if new_image_path is not None:
-                    # Add the image to the output worksheet
-                    img_xl = XLImage(new_image_path)
-                    img_xl.anchor = ws_output.cell(row=row_idx, column=6).coordinate
-                    ws_output.add_image(img_xl)
+    # Iterate over rows in the text dataframe
+    for index, row in text_df.iterrows():
+        trademark_number = row['Trademark Number (210)']
+        image_path = row['Image/Mark']
 
-        row_idx += 1
+        # If image is missing or empty, try to fill it from the image_data dictionary
+        if pd.isnull(image_path) or image_path == "":
+            if trademark_number in image_data:
+                image_bytes = image_data[trademark_number]
+                if image_bytes:
+                    img_buffer = BytesIO(image_bytes)
+                    pil_image = PILImage.open(img_buffer)
+                    img_xl = XLImage(img_buffer)
+                    cell = ws_output.cell(row=index+2, column=text_df.columns.get_loc('Image/Mark') + 1)  # Assuming Image/Mark is in the dataframe
+                    ws_output.add_image(img_xl, cell.coordinate)
+
+        # Copy the existing row from text dataframe
+        for col_idx, value in enumerate(row, start=1):
+            if pd.notnull(value):
+                ws_output.cell(row=index+2, column=col_idx, value=value)
 
     # Save the output Excel file
     wb_output.save(output_excel)
+
