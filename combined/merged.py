@@ -1,13 +1,11 @@
 from PIL import Image as PILImage
-from openpyxl import Workbook
 from openpyxl.drawing.image import Image as XLImage
 from io import BytesIO
 import pandas as pd
 
-def fill_missing_images(text_df, images_df, output_excel):
+def fill_missing_images(text_df, images_df, output_excel, sheet_name):
     # Create a new workbook for the output
-    wb_output = Workbook()
-    ws_output = wb_output.active
+    ws_output = output_excel.create_sheet(title=sheet_name)
 
     # Add headers from the text dataframe
     for col_idx, col_name in enumerate(text_df.columns, start=1):
@@ -22,6 +20,7 @@ def fill_missing_images(text_df, images_df, output_excel):
         image_bytes = row['ImageData']
         if trademark_number and image_bytes:
             image_data[trademark_number] = image_bytes
+    
     # Iterate over rows in the text dataframe
     for index, row in text_df.iterrows():
         trademark_number = row['Trademark Number (210)']
@@ -42,7 +41,4 @@ def fill_missing_images(text_df, images_df, output_excel):
         for col_idx, value in enumerate(row, start=1):
             if pd.notnull(value):
                 ws_output.cell(row=index+2, column=col_idx, value=value)
-
-    # Save the output Excel file
-    wb_output.save(output_excel)
 

@@ -43,7 +43,7 @@ def extract_info(block):
     return trademark_number, filing_date, class_registration, proprietor, representative, image_mark
 
 
-def extract_data(file_path, start_page, end_page):
+def extract_data(file_path):
     data = {
         "Trademark Number (210)": [],
         "Application Filing Date (220)": [],
@@ -61,7 +61,7 @@ def extract_data(file_path, start_page, end_page):
 
             # Iterate over pages within the specified range
             block = ''  # Initialize block
-            for page_idx in range(start_page - 1, min(end_page, num_pages)):
+            for page_idx in range(num_pages):
                 page = pdf_reader.pages[page_idx]
                 page_content = page.extract_text()
 

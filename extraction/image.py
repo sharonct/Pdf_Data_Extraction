@@ -4,7 +4,6 @@ from openpyxl.drawing.image import Image as XLImage
 import fitz  # PyMuPDF
 from PIL import Image as PILImage
 import re
-import io
 import pandas as pd
 
 def extract_trademarks_and_logos(pdf_file):
