@@ -22,7 +22,6 @@ def fill_missing_images(text_df, images_df, output_excel):
         image_bytes = row['ImageData']
         if trademark_number and image_bytes:
             image_data[trademark_number] = image_bytes
-
     # Iterate over rows in the text dataframe
     for index, row in text_df.iterrows():
         trademark_number = row['Trademark Number (210)']

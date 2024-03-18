@@ -1,34 +1,70 @@
+from io import BytesIO
+from openpyxl import Workbook
+from openpyxl.drawing.image import Image as XLImage
 import fitz  # PyMuPDF
 from PIL import Image as PILImage
 import re
-import pandas as pd
 import io
+import pandas as pd
 
 def extract_trademarks_and_logos(pdf_file):
+    # Open the PDF document
     doc = fitz.open(pdf_file)
 
+    # Start from the second row to leave space for the header
+
+    # Lists to store trademarks with and without capitalized last words
+    trademarks_with_caps = []
+    trademarks_without_caps = []
     trademark_data = []
 
-    for page in doc:
+    # Iterate through each page of the PDF
+    for page_num, page in enumerate(doc, start=1):
+        # Extract text from the page
         text = page.get_text()
+
+        # Extract images from the page
         images = page.get_images(full=True)
+        
+        image_index=0
 
-        trademark_numbers = re.findall(r'(\d+)\s*\(220\)', text)  # Extract numbers between (210): and (220):
-        image_index = 0
+        # Extract trademark numbers from the text between (210) and (220)
+        trademarks_210_220 = re.findall(r'(\d+)\s*\(220\)', text, re.DOTALL)
 
-        for trademark_number in trademark_numbers:
-            last_word_caps = trademark_number.split()[-1].isupper()
+        # Extract trademark numbers from the text after (740)
+        trademarks_740 = re.findall(r'\(210\):(.+?)(?=\(210\)|$)', text, re.DOTALL)
+        # Lists to store trademarks with and without capitalized last words
+        trademarks_with_caps = []
+        trademarks_without_caps = []
+        # Zip the two lists together
+        for trademark_210_220, trademark_740 in zip(trademarks_210_220, trademarks_740):
+            # Check if the last word of the trademark_740 is in capital letters
+            last_word_caps = re.findall(r'[A-Z]+$', trademark_740.strip())
+            if last_word_caps:
+                last_word = last_word_caps[-1]
+                trademarks_with_caps.append(trademark_210_220)
+            else:
+                trademarks_without_caps.append(trademark_210_220)
+                #print(trademarks_without_caps)
 
-            if not last_word_caps and image_index < len(images):
+
+        # Assign images to trademarks without capitalized last words
+        for trademark_number in trademarks_without_caps:
+            if image_index < len(images):
                 try:
                     pix = fitz.Pixmap(doc, images[image_index][0])
                     pil_image = PILImage.frombytes("RGB", [pix.width, pix.height], pix.samples)
                     pil_image = pil_image.resize((50, 50))  # Resize the image to 50x50
-                    img_bytes = io.BytesIO()
-                    pil_image.save(img_bytes, format='PNG')
+
+                    # Create an in-memory file-like object
+                    img_bytes = BytesIO()
+                    pil_image.save(img_bytes, format="PNG")
+
                     img_bytes = img_bytes.getvalue()
                     trademark_data.append({'TrademarkNo': trademark_number, 'ImageData': img_bytes})
                     image_index += 1
+
+
                 except Exception as e:
                     print(f"Error processing image: {e}")
                     trademark_data.append({'TrademarkNo': trademark_number, 'ImageData': None})
@@ -37,4 +73,3 @@ def extract_trademarks_and_logos(pdf_file):
 
     df = pd.DataFrame(trademark_data)
     return df
-
