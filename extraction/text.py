@@ -2,12 +2,13 @@ import PyPDF2
 import re
 import pandas as pd
 
+
 def extract_info(block):
-    trademark_number_match = re.search(r'210\)\s*:?\s*(\d+)', block)
-    filing_date_match = re.search(r'\(220\) : (\d{2}/\d{2}/\d{4})', block)
-    class_registration_match = re.search(r'\(511\) : (.*?)(?=\(\d{3}\)|\(220\)|\(210\)|$)', block, re.DOTALL)
-    proprietor_match = re.search(r'\(730\)\s*:\s*(.*?)(?=\(740\)|$)', block, re.DOTALL)
-    representative_match = re.search(r'\(740\) : (.*?)(?=\(\d{3}\)|$)', block, re.DOTALL)
+    trademark_number_match = re.search(r'(\d+)\s*\(220\)', block)
+    filing_date_match = re.search(r'\(220\)[^:]*:\s*(\d{1,2}/\d{1,2}/\d{2,4})', block)
+    class_registration_match = re.search(r'\(511\)[^:]*:?\s*(?:\D*(?=\d))(.*?)(?=\(\d{3}\)|\(\d{2,3}\)|$)', block, re.DOTALL)
+    proprietor_match = re.search(r'\(730\)[^:]*:\s*(.*?)(?=\(740\)|$)', block, re.DOTALL)
+    representative_match = re.search(r'\(740\)[^:]*:\s*(.*?)(?=\(\d{3}\)|$)', block, re.DOTALL)
 
     trademark_number = trademark_number_match.group(1) if trademark_number_match else ''
     filing_date = filing_date_match.group(1) if filing_date_match else ''
@@ -41,6 +42,7 @@ def extract_info(block):
 
     return trademark_number, filing_date, class_registration, proprietor, representative, image_mark
 
+
 def extract_data(file_path, start_page, end_page):
     data = {
         "Trademark Number (210)": [],
@@ -66,9 +68,20 @@ def extract_data(file_path, start_page, end_page):
                 # Split page content by lines and remove newline characters
                 lines = [line.strip() for line in page_content.split('\n')]
 
-                # Filter out lines that contain the page header text or page numbers
-                lines = [line for line in lines if not any(header_text in line for header_text in ['(19) KE - Industrial Property Journal -', '_________', 'Page']) and not line.isdigit() and not '(19) KE - Industrial Pr operty Journal - No.' in line]
-                # Iterate over lines to identify blocks
+                header_patterns = [
+                    r'Industrial Property Journal',  # Text similar to Industrial Property Journal
+                    r'\(19\) KE - Industrial Property Journal - No\. \d{4}/\d{2} \d{2}/\d{2}/\d{4}',  # e.g., (19) KE - Industrial Property Journal - No. 2024/02 29/02/2024
+                ]
+
+
+                # Define a function to check if a line matches any of the header patterns
+                def is_header(line):
+                    return any(re.search(pattern, line) for pattern in header_patterns)
+
+
+                # Filter out lines that match any of the header patterns, are digits, or contain page numbers
+                lines = [line for line in lines if not is_header(line) and not line.isdigit() and "Page" not in line and not all(c == '_' for c in line.strip())]
+
                 for line in lines:
                     if '210' in line:
                         # If a new block starts, extract info from the previous block

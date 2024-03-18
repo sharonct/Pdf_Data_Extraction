@@ -13,7 +13,7 @@ def extract_trademarks_and_logos(pdf_file):
         text = page.get_text()
         images = page.get_images(full=True)
 
-        trademark_numbers = re.findall(r'\(210\): (\d+) \(220\)', text)  # Extract numbers between (210): and (220):
+        trademark_numbers = re.findall(r'(\d+)\s*\(220\)', text)  # Extract numbers between (210): and (220):
         image_index = 0
 
         for trademark_number in trademark_numbers:
