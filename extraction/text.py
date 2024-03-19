@@ -26,19 +26,26 @@ def extract_info(block):
                 image_mark = words_after_none
                 representative = representative.replace(words_after_none, "").strip()
         else:
-            # Check from the end if the words are all uppercase
+            # Check from the end if the words are all uppercase (excluding "NAIROBI")
             words = representative.split()
             all_caps_words = []
+            nairobi_found = False
             for word in reversed(words):
+                if word.upper() == "NAIROBI":
+                    nairobi_found = True
+                    continue
                 if word.isupper():
                     all_caps_words.insert(0, word)
                 else:
                     break
             if all_caps_words:
-                # If all words are uppercase, move them to the Image/Mark column
+                # If there are uppercase words (excluding "NAIROBI"), move them to the Image/Mark column
                 image_mark = ' '.join(all_caps_words)
                 # Remove the all-uppercase words from the Representative column
                 representative = ' '.join(words[:-len(all_caps_words)])
+            elif nairobi_found:
+                # If "NAIROBI" is found but there are no other all-caps words, leave the representative column unchanged
+                pass
 
     return trademark_number, filing_date, class_registration, proprietor, representative, image_mark
 
@@ -68,20 +75,22 @@ def extract_data(file_path):
                 # Split page content by lines and remove newline characters
                 lines = [line.strip() for line in page_content.split('\n')]
 
-                header_patterns = [
-                    r'Industrial Property Journal',  # Text similar to Industrial Property Journal
-                    r'\(19\) KE - Industrial Property Journal - No\. \d{4}/\d{2} \d{2}/\d{2}/\d{4}',  # e.g., (19) KE - Industrial Property Journal - No. 2024/02 29/02/2024
-                ]
-
-
-                # Define a function to check if a line matches any of the header patterns
                 def is_header(line):
+                    header_patterns = [
+                        r'Industrial Property Journal',  # Text similar to Industrial Property Journal
+                        r'\(19\) KE - Industrial Property Journal - No\. \d{4}/\d{2} \d{2}/\d{2}/\d{4}', # e.g., (19) KE - Industrial Property Journal - No. 2024/02 29/02/2024
+                        r'\(19\) KE - Industrial\s*Pr\s*operty Journal - No\.\s*\d{4}/\d{2}\s+\d{2}/\d{2}\s+/\s*\d{4}', # e.g., (19) KE - Industrial Pr operty Journal - No. 2023/10   31/10 /2023                        
+                        r'\(\d+\) KE - Industrial Property Journal - No\. \d+/\d+ \d+/\d+/\d+',  # More general pattern for header
+                    ]
                     return any(re.search(pattern, line) for pattern in header_patterns)
 
-
-                # Filter out lines that match any of the header patterns, are digits, or contain page numbers
-                lines = [line for line in lines if not is_header(line) and not line.isdigit() and "Page" not in line and not all(c == '_' for c in line.strip())]
-
+                # Filter out lines that match any of the header patterns, contain digits, "Page",
+                # or consist of only underscores
+                lines = [re.sub(r'_+', '', line) for line in lines if not is_header(line) 
+                        and not line.isdigit() 
+                        and "Page" not in line 
+                        and not all(c == '_' for c in line.strip())]
+                
                 for line in lines:
                     if '210' in line:
                         # If a new block starts, extract info from the previous block
@@ -119,5 +128,11 @@ def extract_data(file_path):
 
     df = pd.DataFrame(data)
 
-    return df
+    # Replace empty strings with NaN values
+    df.replace('', pd.NA, inplace=True)
 
+
+    # Drop rows with data only in one column
+    df = df.dropna(subset=df.columns, thresh=2)
+
+    return df

@@ -8,6 +8,10 @@ if __name__ == "__main__":
     output_excel_path = 'output/final.xlsx'
     output_excel = Workbook()
 
+    # Remove the default "Sheet" created when Workbook is initialized
+    default_sheet = output_excel.active
+    output_excel.remove(default_sheet)
+
     for filename in os.listdir(folder_path):
         if filename.endswith(".pdf"):
             pdf_file_path = os.path.join(folder_path, filename)
