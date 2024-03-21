@@ -17,35 +17,45 @@ def extract_trademarks_and_logos(pdf_file):
     trademarks_without_caps = []
     trademark_data = []
 
-    # Iterate through each page of the PDF
+        # Iterate through each page of the PDF
     for page_num, page in enumerate(doc, start=1):
         # Extract text from the page
         text = page.get_text()
 
+        # Extract images from the page and sort them based on their y-coordinates
         # Extract images from the page
         images = page.get_images(full=True)
-        
-        image_index=0
+
+    # Sort images based on their y-coordinates (top to bottom)
+# Sort images based on their image numbers
+        images = sorted(images, key=lambda img: img[0])
+        # Reset image_index for each new page
+        image_index = 0
 
         # Extract trademark numbers from the text between (210) and (220)
         trademarks_210_220 = re.findall(r'(\d+)\s*\(220\)', text, re.DOTALL)
 
         # Extract trademark numbers from the text after (740)
         trademarks_740 = re.findall(r'\(210\):(.+?)(?=\(210\)|$)', text, re.DOTALL)
+
         # Lists to store trademarks with and without capitalized last words
         trademarks_with_caps = []
         trademarks_without_caps = []
+
         # Zip the two lists together
         for trademark_210_220, trademark_740 in zip(trademarks_210_220, trademarks_740):
             # Check if the last word of the trademark_740 is in capital letters
             last_word_caps = re.findall(r'[A-Z]+$', trademark_740.strip())
-            if last_word_caps:
-                last_word = last_word_caps[-1]
-                trademarks_with_caps.append(trademark_210_220)
-            else:
-                trademarks_without_caps.append(trademark_210_220)
-                #print(trademarks_without_caps)
+            words_after_none = re.findall(r'None\s*(\w+)', trademark_740.strip())
 
+
+            # Check if the last word of the trademark is capitalized
+            if last_word_caps or words_after_none:
+                trademarks_with_caps.append(trademark_210_220)
+                
+            else:
+                # If neither condition is met, add the trademark to trademarks_without_caps
+                trademarks_without_caps.append(trademark_210_220)
 
         # Assign images to trademarks without capitalized last words
         for trademark_number in trademarks_without_caps:
@@ -63,12 +73,15 @@ def extract_trademarks_and_logos(pdf_file):
                     trademark_data.append({'TrademarkNo': trademark_number, 'ImageData': img_bytes})
                     image_index += 1
 
-
                 except Exception as e:
                     print(f"Error processing image: {e}")
                     trademark_data.append({'TrademarkNo': trademark_number, 'ImageData': None})
             else:
                 trademark_data.append({'TrademarkNo': trademark_number, 'ImageData': None})
+
+        # Reset image_index at the end of each page iteration
+        image_index = 0
+
 
     df = pd.DataFrame(trademark_data)
     return df
