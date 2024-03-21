@@ -2,13 +2,12 @@ import PyPDF2
 import re
 import pandas as pd
 
-
 def extract_info(block):
     trademark_number_match = re.search(r'(\d+)\s*\(220\)', block)
-    filing_date_match = re.search(r'\(220\)[^:]*:\s*(\d{1,2}/\d{1,2}/\d{2,4})', block)
-    class_registration_match = re.search(r'\(511\)[^:]*:?\s*(?:\D*(?=\d))(.*?)(?=\(\d{3}\)|\(\d{2,3}\)|$)', block, re.DOTALL)
-    proprietor_match = re.search(r'\(730\)[^:]*:\s*(.*?)(?=\(740\)|$)', block, re.DOTALL)
-    representative_match = re.search(r'\(740\)[^:]*:\s*(.*?)(?=\(\d{3}\)|$)', block, re.DOTALL)
+    filing_date_match = re.search(r'\(220\)[^:]*:?\s*(\d{1,2}/\d{1,2}/\d{2,4})', block)
+    class_registration_match = re.search(r'\(511\)\s*\D*(\d.*?)\s*(?=\(\d{3}\)|$)', block, re.DOTALL)              
+    proprietor_match = re.search(r'\(730\)\s*(?:[^:]*:\s*)?(.*?)(?=\(\d{3}\)|$)', block, re.DOTALL)                          
+    representative_match = re.search(r'\(740\)\s*(?:[^:]*:\s*)?(.*?)(?=\(\d{3}\)|$)', block, re.DOTALL)
 
     trademark_number = trademark_number_match.group(1) if trademark_number_match else ''
     filing_date = filing_date_match.group(1) if filing_date_match else ''
@@ -49,7 +48,6 @@ def extract_info(block):
 
     return trademark_number, filing_date, class_registration, proprietor, representative, image_mark
 
-
 def extract_data(file_path):
     data = {
         "Trademark Number (210)": [],
@@ -73,7 +71,7 @@ def extract_data(file_path):
                 page_content = page.extract_text()
 
                 # Split page content by lines and remove newline characters
-                lines = [line.strip() for line in page_content.split('\n')]
+                lines = [line.strip() for line in page_content.split('\n')]            
 
                 def is_header(line):
                     header_patterns = [
@@ -91,6 +89,7 @@ def extract_data(file_path):
                         and "Page" not in line 
                         and not all(c == '_' for c in line.strip())]
                 
+               
                 for line in lines:
                     if '210' in line:
                         # If a new block starts, extract info from the previous block
@@ -105,6 +104,7 @@ def extract_data(file_path):
                                 data["Image/Mark"].append(info[5])
                         # Start a new block
                         block = line
+
                     else:
                         # Append line to the current block
                         block += ' ' + line
@@ -130,7 +130,6 @@ def extract_data(file_path):
 
     # Replace empty strings with NaN values
     df.replace('', pd.NA, inplace=True)
-
 
     # Drop rows with data only in one column
     df = df.dropna(subset=df.columns, thresh=2)
