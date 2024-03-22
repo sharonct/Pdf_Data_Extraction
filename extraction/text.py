@@ -17,7 +17,27 @@ def extract_info(block):
 
     # Extracting data for Image/Mark column
     image_mark = ''
+
+    # Function to split text after "Kenya" and move capitalized words to Image/Mark column
+    def move_words_after_kenya(text):
+        kenya_match = re.search(r'K\s*e\s*n\s*y\s*a', text, re.IGNORECASE)
+        if kenya_match:
+            kenya_index = kenya_match.end()
+            kenya_part = text[:kenya_index].strip()  # Include "Kenya" and preceding text
+            words_after_kenya = text[kenya_index:].strip()
+
+            if words_after_kenya:
+                image_mark = words_after_kenya
+                return kenya_part, image_mark
+
+        return text, ""
+
+
     if representative:
+        # Apply the move_words_after_kenya function to the Representative/Applicant (740) column
+        representative, image_mark = move_words_after_kenya(representative)
+
+
         # Move words after "None" to the Image/Mark column
         if "None" in representative:
             words_after_none = representative.split("None", 1)[-1].strip()
@@ -88,8 +108,7 @@ def extract_data(file_path):
                         and not line.isdigit() 
                         and "Page" not in line 
                         and not all(c == '_' for c in line.strip())]
-                
-               
+                              
                 for line in lines:
                     if '210' in line:
                         # If a new block starts, extract info from the previous block
@@ -125,6 +144,12 @@ def extract_data(file_path):
 
     if not data:
         print("No data found within the specified page range.")
+
+    # Function to remove commas from the Image/Mark column
+    def remove_commas(text):
+        return text.replace(',', '')
+    
+    data["Image/Mark"] = [remove_commas(text) for text in data["Image/Mark"]]
 
     df = pd.DataFrame(data)
 
