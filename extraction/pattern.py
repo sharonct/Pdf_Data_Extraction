@@ -67,29 +67,10 @@ def extract_info(block):
             
     # If representative is empty but proprietor is not
     if not representative and proprietor:
-        # Find all occurrences of the word "Kenya" in the text
-        matches = [match.start() for match in re.finditer(r'\bKenya\b', proprietor)]
-
-        # Initialize variables to store the last occurrence and words after it
-        last_occurrence_index = None
-        words_after_kenya = ""
-
-        # Iterate through matches to find the last occurrence
-        for index in matches:
-            last_occurrence_index = index
-
-        # Extract words after the last occurrence of the keyword
-        if last_occurrence_index is not None:
-            words_after_kenya = proprietor[last_occurrence_index + len('Kenya'):].strip()
-
-        # Update image/mark and proprietor
-        image_mark = words_after_kenya.strip()
-        proprietor = proprietor[:last_occurrence_index].strip() if last_occurrence_index is not None else proprietor.strip()
-
-        # Move last words that are all caps in proprietor to image/mark
+         # Move last words that are all caps in proprietor to image/mark
         all_caps_words = []
         # Check each word in reverse order
-        words = proprietor.split()
+        words = proprietor.split() 
         for word in reversed(words):
             if word.isupper():
                 all_caps_words.insert(0, word)
