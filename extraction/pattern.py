@@ -19,13 +19,13 @@ def extract_info(block):
 
     # Function to split text after "Kenya" and move capitalized words to Image/Mark column
     def move_words_after_kenya(text):
-        kenya_match = re.search(r'K\s*e\s*n\s*y\s*a\b', text, re.IGNORECASE)
+        kenya_match = re.search(r'K\s*e\s*n\s*y\s*a', text, re.IGNORECASE)
         if kenya_match:
             kenya_index = kenya_match.end()
             kenya_part = text[:kenya_index].strip()  # Include "Kenya" and preceding text
             words_after_kenya = text[kenya_index:].strip()
 
-            if words_after_kenya:
+            if words_after_kenya.isupper():
                 image_mark = words_after_kenya
                 return kenya_part, image_mark
 
