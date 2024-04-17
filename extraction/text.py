@@ -49,7 +49,7 @@ def extract_data(file_path):
 
                 # Iterate over filtered lines
                 for line in lines:
-                    if '210' in line:
+                    if '210' in line or '2 10' in line or '21 0' in line:
                         # If a new block starts, extract info from the previous block
                         if block:
                             info = extract_info(block)
