@@ -17,3 +17,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=sharonct
+            -Dsonar.projectKey=sharonct_Pdf_Data_Extraction
